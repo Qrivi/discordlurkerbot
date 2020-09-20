@@ -10,7 +10,7 @@ const prefixes = [
 const prefix = () => prefixes[Math.floor(Math.random() * prefixes.length)]
 
 const gameQuotes = [
-    'Why not you team up?',
+    'Why not team up?',
     'GLHF!',
     'Only Ws today.'
 ]
@@ -19,7 +19,7 @@ const gameQuote = () => gameQuotes[Math.floor(Math.random() * gameQuotes.length)
 const voiceQuotes = [
     'Such a sweet voice!',
     'Go say hi!',
-    'Join for good vibes.'
+    'Good vibes only.'
 ]
 const voiceQuote = () => voiceQuotes[Math.floor(Math.random() * voiceQuotes.length)]
 
@@ -59,7 +59,7 @@ client.login(process.env.DISCORD_TOKEN)
 
             const oldGame = oldPresence.activities.find(activity => activity.type === 'PLAYING')
 
-            if (newGame !== oldGame) {
+            if (!oldGame || oldGame.name !== newGame.name) {
                 channel.send(`${prefix()} <@${newPresence.member.id}> started playing **${newGame.name}**! ${gameQuote()}`)
             }
         })
