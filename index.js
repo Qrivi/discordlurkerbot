@@ -5,7 +5,7 @@ const Discord = require('discord.js')
 const prefixes = [
     'Heads up!',
     'Ding!',
-    'PSA!'
+    'PSA:'
 ]
 const prefix = () => prefixes[Math.floor(Math.random() * prefixes.length)]
 
@@ -60,6 +60,7 @@ client.login(process.env.DISCORD_TOKEN)
             const oldGame = oldPresence.activities.find(activity => activity.type === 'PLAYING')
 
             if (!oldGame || oldGame.name !== newGame.name) {
+                console.log(`${prefix()} <@${newPresence.member.id}> started playing **${newGame.name}**! ${gameQuote()}`)
                 channel.send(`${prefix()} <@${newPresence.member.id}> started playing **${newGame.name}**! ${gameQuote()}`)
             }
         })
