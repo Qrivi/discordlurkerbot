@@ -2,6 +2,10 @@ require('dotenv').config()
 
 const Discord = require('discord.js')
 
+const margin = 30 * 60000 // time to remember games in ms
+const memory = {}
+const blacklist = ['BattleEye Launcher']
+
 const prefixes = [
     'Heads up!',
     'Ding!',
@@ -30,8 +34,8 @@ client.once('ready', () => {
 })
 
 client.login(process.env.DISCORD_TOKEN)
-    .then(() => client.guilds.cache.first().fetch() )
-    .then(guild => guild.channels.cache.find(channel => channel.id === process.env.DISCORD_CHANNEL))
+    .then(() => client.guilds.cache.first().fetch())
+    .then(guild => guild.channels.cache.find(channel => channel.id === process.env.DISCORD_CHANNEL).fetch())
     .then(channel => {
         client.on('voiceStateUpdate', (oldState, newState) => {
             if (!oldState.channelID && newState.channelID) {
@@ -54,14 +58,22 @@ client.login(process.env.DISCORD_TOKEN)
 
         client.on('presenceUpdate', (oldPresence, newPresence) => {
             const newGame = newPresence.activities.find(activity => activity.type === 'PLAYING')
-
-            if (newPresence.member.user.bot || !newGame) return
+            if (newPresence.member.user.bot || !newGame || blacklist.includes(newGame)) return // not playing anymore or a bot or "not really a game"
 
             const oldGame = oldPresence.activities.find(activity => activity.type === 'PLAYING')
 
-            if (!oldGame || oldGame.name !== newGame.name) {
-                console.log(`${prefix()} <@${newPresence.member.id}> started playing **${newGame.name}**! ${gameQuote()}`)
-                channel.send(`${prefix()} <@${newPresence.member.id}> started playing **${newGame.name}**! ${gameQuote()}`)
+            if (!oldGame || oldGame.name.trim().toUpperCase() !== newGame.name.trim().toUpperCase()) {
+                const oldMemory = memory[newPresence.member.id]
+
+                if (!oldMemory || new Date(oldMemory.date.getTime() + margin) < new Date()) {
+                    memory[newPresence.member.id] = {
+                        game: newGame.name,
+                        date: new Date()
+                    }
+                    console.log(`${prefix()} <@${newPresence.member.id}> started playing **${newGame.name}**! ${gameQuote()}`)
+                    channel.send(`${prefix()} <@${newPresence.member.id}> started playing **${newGame.name}**! ${gameQuote()}`)
+                }
+                // if we get here the user must still be playing the same game
             }
         })
     })
