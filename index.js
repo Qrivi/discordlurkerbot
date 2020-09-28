@@ -64,12 +64,12 @@ client.login(process.env.DISCORD_TOKEN)
 
             if (!oldGame || oldGame.name.trim().toUpperCase() !== newGame.name.trim().toUpperCase()) {
                 const oldMemory = memory[newPresence.member.id]
+                memory[newPresence.member.id] = {
+                    game: newGame.name,
+                    date: new Date()
+                }
 
                 if (!oldMemory || new Date(oldMemory.date.getTime() + margin) < new Date()) {
-                    memory[newPresence.member.id] = {
-                        game: newGame.name,
-                        date: new Date()
-                    }
                     console.log(`${prefix()} <@${newPresence.member.id}> started playing **${newGame.name}**! ${gameQuote()}`)
                     channel.send(`${prefix()} <@${newPresence.member.id}> started playing **${newGame.name}**! ${gameQuote()}`)
                 }
