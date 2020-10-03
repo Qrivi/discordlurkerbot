@@ -39,15 +39,15 @@ client.login(process.env.DISCORD_TOKEN)
     .then(channel => {
         client.on('voiceStateUpdate', (oldState, newState) => {
             if (!oldState.channelID && newState.channelID) {
-                console.log(`${prefix()} <@${newState.member.id}> joined the **${newState.channel.name}** voice channel! ${voiceQuote()}`)
+                console.log(`${prefix()} <@${newState.member.displayName}> joined the **${newState.channel.name}** voice channel! ${voiceQuote()}`)
                 channel.send(`${prefix()} <@${newState.member.id}> joined the **${newState.channel.name}** voice channel! ${voiceQuote()}`)
             } else if (oldState.channelID && !newState.channelID) {
                 console.log(`${oldState.member.displayName} left the ${oldState.channel.name} voice channel!`)
             } else if (oldState.channelID && newState.channelID && oldState.channelID !== newState.channelID) {
-                console.log(`${prefix()} <@${newState.member.id}> switched to the **${newState.channel.name}** voice channel! ${voiceQuote()}`)
+                console.log(`${prefix()} <@${newState.member.displayName}> switched to the **${newState.channel.name}** voice channel! ${voiceQuote()}`)
                 channel.send(`${prefix()} <@${newState.member.id}> switched to the **${newState.channel.name}** voice channel! ${voiceQuote()}`)
             } else if (oldState.channelID === newState.channelID && !oldState.streaming && newState.streaming) {
-                console.log(`${prefix()} <@${newState.member.id}> started streaming in the **${newState.channel.name}** voice channel! ${voiceQuote()}`)
+                console.log(`${prefix()} <@${newState.member.displayName}> started streaming in the **${newState.channel.name}** voice channel! ${voiceQuote()}`)
                 channel.send(`${prefix()} <@${newState.member.id}> started streaming in the **${newState.channel.name}** voice channel! ${voiceQuote()}`)
             } else {
                 console.log('That was something else...')
@@ -60,20 +60,16 @@ client.login(process.env.DISCORD_TOKEN)
             const newGame = newPresence.activities.find(activity => activity.type === 'PLAYING')
             if (newPresence.member.user.bot || !newGame || blacklist.includes(newGame)) return // not playing anymore or a bot or "not really a game"
 
-            const oldGame = oldPresence.activities.find(activity => activity.type === 'PLAYING')
-
-            if (!oldGame || oldGame.name.trim().toUpperCase() !== newGame.name.trim().toUpperCase()) {
-                const oldMemory = memory[newPresence.member.id]
-                memory[newPresence.member.id] = {
-                    game: newGame.name,
-                    date: new Date()
-                }
-
-                if (!oldMemory || new Date(oldMemory.date.getTime() + margin) < new Date()) {
-                    console.log(`${prefix()} <@${newPresence.member.id}> started playing **${newGame.name}**! ${gameQuote()}`)
-                    channel.send(`${prefix()} <@${newPresence.member.id}> started playing **${newGame.name}**! ${gameQuote()}`)
-                }
-                // if we get here the user must still be playing the same game
+            const oldMemory = memory[newPresence.member.id]
+            memory[newPresence.member.id] = {
+                game: newGame.name.trim(),
+                date: new Date()
             }
+
+            if (!oldMemory || new Date(oldMemory.date.getTime() + margin) < new Date() && oldMemory.game.toUpperCase() !== newGame.name.trim().toUpperCase()) {
+                console.log(`${prefix()} <@${newPresence.member.displayName}> started playing **${newGame.name}**! ${gameQuote()}`)
+                channel.send(`${prefix()} <@${newPresence.member.id}> started playing **${newGame.name}**! ${gameQuote()}`)
+            }
+            // if we get here the user must still be playing the same game
         })
     })
