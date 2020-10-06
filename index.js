@@ -9,21 +9,26 @@ const blacklist = ['BattleEye Launcher']
 const prefixes = [
     'Heads up!',
     'Ding!',
-    'PSA:'
+    'PSA:',
+    'Wholla.',
+    'Beep beep.'
 ]
 const prefix = () => prefixes[Math.floor(Math.random() * prefixes.length)]
 
 const gameQuotes = [
     'Why not team up?',
     'GLHF!',
-    'Only Ws today.'
+    'Only Ws today.',
+    'Let\'s get this bread.',
+    'Don\'t forget the salt.'
 ]
 const gameQuote = () => gameQuotes[Math.floor(Math.random() * gameQuotes.length)]
 
 const voiceQuotes = [
     'Such a sweet voice!',
     'Go say hi!',
-    'Good vibes only.'
+    'Good vibes only.',
+    'Come share your secrets.'
 ]
 const voiceQuote = () => voiceQuotes[Math.floor(Math.random() * voiceQuotes.length)]
 
@@ -47,8 +52,8 @@ client.login(process.env.DISCORD_TOKEN)
                 console.log(`${prefix()} <@${newState.member.displayName}> switched to the **${newState.channel.name}** voice channel! ${voiceQuote()}`)
                 channel.send(`${prefix()} <@${newState.member.id}> switched to the **${newState.channel.name}** voice channel! ${voiceQuote()}`)
             } else if (oldState.channelID === newState.channelID && !oldState.streaming && newState.streaming) {
-                console.log(`${prefix()} <@${newState.member.displayName}> started streaming in the **${newState.channel.name}** voice channel! ${voiceQuote()}`)
-                channel.send(`${prefix()} <@${newState.member.id}> started streaming in the **${newState.channel.name}** voice channel! ${voiceQuote()}`)
+                console.log(`${prefix()} <@${newState.member.displayName}> started streaming in the **${newState.channel.name}** voice channel!`)
+                channel.send(`${prefix()} <@${newState.member.id}> started streaming in the **${newState.channel.name}** voice channel!`)
             } else {
                 console.log('That was something else...')
                 // console.log(oldState)
