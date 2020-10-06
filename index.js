@@ -59,16 +59,22 @@ client.login(process.env.DISCORD_TOKEN)
         client.on('presenceUpdate', (oldPresence, newPresence) => {
             const newGame = newPresence.activities.find(activity => activity.type === 'PLAYING')
             if (newPresence.member.user.bot) return // user is a bot
-
+            console.log(`# <@${newPresence.member.displayName}> opened ${newGame.name}`)
+            
             const oldMemory = memory[newPresence.member.id]
-            memory[newPresence.member.id] = {
+            memory['user' + newPresence.member.id] = {
                 game: newGame ? newGame.name.trim() : 'not playing anymore',
                 date: new Date()
             }
+            
+            console.log('# old memory:')
+            console.log(oldMemory)
+            console.log('# new memory:')
+            console.log(memory['user' + newPresence.member.id])
 
             if (!newGame || blacklist.includes(newGame)) return
 
-            if (!oldMemory || new Date(oldMemory.date.getTime() + margin) < new Date() && oldMemory.game.toUpperCase() !== newGame.name.trim().toUpperCase()) {
+            if (!oldMemory || oldMemory.game.toUpperCase() !== newGame.name.trim().toUpperCase() || new Date(oldMemory.date.getTime() + margin) < new Date()) {
                 console.log(`${prefix()} <@${newPresence.member.displayName}> started playing **${newGame.name}**! ${gameQuote()}`)
                 channel.send(`${prefix()} <@${newPresence.member.id}> started playing **${newGame.name}**! ${gameQuote()}`)
             }
