@@ -62,24 +62,33 @@ client.login(process.env.DISCORD_TOKEN)
         })
 
         client.on('presenceUpdate', (oldPresence, newPresence) => {
-            const newGame = newPresence.activities.find(activity => activity.type === 'PLAYING')
             if (newPresence.member.user.bot) return // user is a bot
-            console.log(`# <@${newPresence.member.displayName}> opened ${newGame.name}`)
-            
+
+            const activity = newPresence.activities.find(activity => activity.type === 'PLAYING')
+            if (!activity) return // activity was LISTENING or something else
+
+            console.log('# new PLAYING activity:')
+            console.log(activity)
+
             const oldMemory = memory[newPresence.member.id]
             memory['user' + newPresence.member.id] = {
-                game: newGame ? newGame.name.trim() : 'not playing anymore',
+                game: activity && activity.name ? activity.name.trim() : 'not playing anymore',
                 date: new Date()
             }
-            
+
             console.log('# old memory:')
             console.log(oldMemory)
             console.log('# new memory:')
             console.log(memory['user' + newPresence.member.id])
 
-            if (!newGame || blacklist.includes(newGame)) return
+            if (!activity.name || blacklist.includes(newGame)) {
+                console.log('# not playing anymore or playing blacklisted name! Aborting...')
+                return
+            }
 
-            if (!oldMemory || oldMemory.game.toUpperCase() !== newGame.name.trim().toUpperCase() || new Date(oldMemory.date.getTime() + margin) < new Date()) {
+            if (!oldMemory // User just started playing a new game
+                || oldMemory.game.toUpperCase() !== newGame.name.trim().toUpperCase() // User started playing a different game than last time
+                || new Date(oldMemory.date.getTime() + margin) < new Date()) { // User might have started playing the same game, but enough time has passed
                 console.log(`${prefix()} <@${newPresence.member.displayName}> started playing **${newGame.name}**! ${gameQuote()}`)
                 channel.send(`${prefix()} <@${newPresence.member.id}> started playing **${newGame.name}**! ${gameQuote()}`)
             }
