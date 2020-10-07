@@ -81,16 +81,16 @@ client.login(process.env.DISCORD_TOKEN)
             console.log('# new memory:')
             console.log(memory['user' + newPresence.member.id])
 
-            if (!activity.name || blacklist.includes(newGame)) {
+            if (!activity.name || blacklist.includes(activity.name.trim())) {
                 console.log('# not playing anymore or playing blacklisted name! Aborting...')
                 return
             }
 
             if (!oldMemory // User just started playing a new game
-                || oldMemory.game.toUpperCase() !== newGame.name.trim().toUpperCase() // User started playing a different game than last time
+                || oldMemory.game.toUpperCase() !== activity.name.trim().toUpperCase() // User started playing a different game than last time
                 || new Date(oldMemory.date.getTime() + margin) < new Date()) { // User might have started playing the same game, but enough time has passed
-                console.log(`${prefix()} <@${newPresence.member.displayName}> started playing **${newGame.name}**! ${gameQuote()}`)
-                channel.send(`${prefix()} <@${newPresence.member.id}> started playing **${newGame.name}**! ${gameQuote()}`)
+                console.log(`${prefix()} <@${newPresence.member.displayName}> started playing **${activity.name.trim()}**! ${gameQuote()}`)
+                channel.send(`${prefix()} <@${newPresence.member.id}> started playing **${activity.name.trim()}**! ${gameQuote()}`)
             }
             // if we get here the user must still be playing the same game
         })
