@@ -70,7 +70,7 @@ client.login(process.env.DISCORD_TOKEN)
             console.log('# new PLAYING activity:')
             console.log(activity)
 
-            const oldMemory = memory[newPresence.member.id]
+            const oldMemory = memory['user' + newPresence.member.id]
             memory['user' + newPresence.member.id] = {
                 game: activity && activity.name ? activity.name.trim() : 'not playing anymore',
                 date: new Date()
