@@ -8,7 +8,7 @@ const blacklist = ['BattleEye Launcher']
 
 const gameRoles = {
     game356877880938070016: '695291606093267054', // Steam Rocket League
-    game11111111111: '695290745216565308' // Fortnite
+    game432980957394370572: '695290745216565308' // Fortnite
 }
 
 const prefixes = [
