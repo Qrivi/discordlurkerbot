@@ -47,6 +47,8 @@ client.login(process.env.DISCORD_TOKEN)
     .then(() => client.guilds.cache.first().fetch())
     .then(guild => guild.channels.cache.find(channel => channel.id === process.env.DISCORD_CHANNEL).fetch())
     .then(channel => {
+        console.log('Found server and channel to post to!', channel.name)
+
         client.on('voiceStateUpdate', (oldState, newState) => {
             if (!oldState.channelID && newState.channelID) {
                 console.log(`${prefix()} ${newState.member.displayName} joined the ${newState.channel.name} voice channel! ${voiceQuote()}`)
