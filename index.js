@@ -91,7 +91,7 @@ client.login(process.env.DISCORD_TOKEN.trim())
             console.log('new memory:', memory[`user${newPresence.member.id}`])
 
             if (!activity.name || blacklist.includes(activity.name.trim())) {
-                console.log(member.displayName, 'is not playing anymore or playing blacklisted name!')
+                console.log(newPresence.member.displayName, 'is not playing anymore or playing blacklisted name!')
             } else if (!oldMemory // User just started playing a new game
                 || oldMemory.game.toUpperCase() !== activity.name.trim().toUpperCase() // User started playing a different game than last time
                 || new Date(oldMemory.date.getTime() + margin) < new Date()) { // User might have started playing the same game, but enough time has passed
