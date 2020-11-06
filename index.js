@@ -2,7 +2,7 @@ require('dotenv').config()
 
 const Discord = require('discord.js')
 
-const margin = 30 * 60000 // time to remember games in ms
+const margin = 120 * 60000 // time to remember games in ms
 const memory = {}
 const blacklist = ['BattleEye Launcher']
 
