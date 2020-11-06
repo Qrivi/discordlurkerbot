@@ -4,7 +4,11 @@ const Discord = require('discord.js')
 
 const margin = 120 * 60000 // time to remember games in ms
 const memory = {}
-const blacklist = ['BattleEye Launcher']
+const blacklist = [
+    'BattleEye Launcher',
+    'Visual Studio Code',
+    'IntelliJ IDEA Ultimate',
+]
 
 const gameRoles = {
     game356877880938070016: '695291606093267054', // Steam Rocket League
