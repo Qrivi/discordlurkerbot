@@ -84,6 +84,7 @@ client.login(process.env.DISCORD_TOKEN.trim())
 
             const oldMemory = memory[`user${newPresence.member.id}`]
             memory[`user${newPresence.member.id}`] = {
+                applicationID: activity && activity.name ? activity.applicationID : 0,
                 game: activity && activity.name ? activity.name.trim() : 'not playing anymore',
                 date: new Date()
             }
@@ -95,6 +96,7 @@ client.login(process.env.DISCORD_TOKEN.trim())
                 console.log(newPresence.member.displayName, 'is not playing anymore or playing blacklisted name!')
             } else if (!oldMemory // User just started playing a new game
                 || oldMemory.game.toUpperCase() !== activity.name.trim().toUpperCase() // User started playing a different game than last time
+                || oldMemory.applicationID !== activity.applicationID // Same check as above but on ID
                 || new Date(oldMemory.date.getTime() + margin) < new Date()) { // User might have started playing the same game, but enough time has passed
                 const gameRole = gameRoles[`game${activity.applicationID}`]
                 const game = gameRole ? `<@&${gameRole}>` : `**${activity.name.trim()}**`
