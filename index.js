@@ -5,6 +5,7 @@ const Discord = require('discord.js')
 const margin = 120 * 60000 // time to remember games in ms
 const memory = {}
 const blacklist = [
+    'BattlEye Launcher',
     'BattleEye Launcher',
     'Visual Studio Code',
     'IntelliJ IDEA Ultimate',
