@@ -7,7 +7,7 @@ const memory = {}
 const blacklist = [
     'BattlEye Launcher',
     'BattleEye Launcher',
-    'Visual Studio Code',
+    'Visual Studio Code', // 383226320970055681
     'IntelliJ IDEA Ultimate',
 ]
 
@@ -79,7 +79,7 @@ client.login(process.env.DISCORD_TOKEN.trim())
             const activity = newPresence.activities.find(activity => activity.type === 'PLAYING')
             if (!activity) return // activity was LISTENING or something else
 
-            console.log('# new PLAYING activity:', activity.applicationID)
+            console.log('\n# PLAYING activity update for', newPresence.member.displayName)
             // console.log(activity)
 
             const oldMemory = memory[`user${newPresence.member.id}`]
@@ -104,6 +104,18 @@ client.login(process.env.DISCORD_TOKEN.trim())
                 channel.send(`${prefix()} <@${newPresence.member.id}> started playing ${game}! ${gameQuote()}`)
             } else {
                 console.log(`${newPresence.member.displayName} is still playing the same game.`)
+            }
+        })
+
+        client.on('message', message => {
+            if (message.member.id === client.user.id) { // Message from this bot
+                const player = message.mentions.users.first()
+
+                message.react('❌')
+                message.awaitReactions((reaction, user) => user.id == player.id && reaction.emoji.name == '❌', { max: 1, time: 60000 }).then(collection => {
+                    if (collection.first()) message.delete() // Triggered with the required emoji
+                    else message.reactions.cache.get('❌').remove() // Got triggered because of timeout
+                })
             }
         })
     })
