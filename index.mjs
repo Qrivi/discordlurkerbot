@@ -9,9 +9,9 @@ dotenv.config()
 const client = new Discord.Client()
 // TODO const db = lowdb(new FileSync('db.json'))
 const gameMemory = {}
-// TODO const voiceMemory = {}
-
-// fixed config
+const gameTimeout = 120 /* minutes */ * 60000
+const voiceMemory = {}
+const voiceTimeout = 30 /* minutes */ * 60000
 const blacklist = [
     'BattlEye Launcher',
     'BattleEye Launcher',
@@ -28,7 +28,6 @@ const roles = [
         id: '695290745216565308',
     }
 ]
-const timeout = 120 /* minutes */ * 60000
 
 // Templates
 const messagePrefixes = [
@@ -108,41 +107,55 @@ client.on('presenceUpdate', (oldPresence, newPresence) => {
     }
     gameMemory[`user${newPresence.member.id}`] = newActivity
 
-    console.log(`\nActivity update for ${newPresence.member.displayName}: (${newActivity.date})`)
-    console.log(`Old activity: ${oldActivity?.game} (${oldActivity?.details})`)
-    console.log(`New activity: ${newActivity?.game} (${newActivity?.details})`)
+    console.log(`Activity update for ${newPresence.member.displayName}: (${newActivity.date})`)
+    console.log(`  Old activity: ${oldActivity?.game} (${oldActivity?.details})`)
+    console.log(`  New activity: ${newActivity?.game} (${newActivity?.details})`)
 
-    if (newActivity.game === oldActivity?.game && newActivity.date < new Date(oldActivity.date.getTime() + timeout)) {
-        console.log('Still playing the same game -- aborting')
+    if (newActivity.game === oldActivity?.game && newActivity.date < new Date(oldActivity.date.getTime() + gameTimeout)) {
+        console.log('  Still playing the same game -- aborting')
         return
     }
 
     const role = roles.find(r => r.game === newActivity.game)
     const game = role ? `<@&${role.id}>` : `**${newActivity.game}**`
-    console.log('Playing a new game -- sending update')
+    console.log('  Playing a new game -- sending update')
     updateChannel.send(`${messagePrefix()} <@${newPresence.member.id}> started playing ${game}! ${gameSuffix()}`)
 })
 
 client.on('voiceStateUpdate', (oldState, newState) => {
     if (newState.member.user.bot) return // User is a bot
 
-    if (!oldState.channelID && newState.channelID) {
-        console.log(`${newState.member.displayName} joined ${newState.channel.name}`)
-        channel.send(`${messagePrefix()} <@${newState.member.id}> joined the **${newState.channel.name}** voice channel! ${voiceSuffix()}`)
+    const oldUpdate = voiceMemory[`user${newState.member.id}`]
+    const newUpdate = {
+        channelID: newState.channelID,
+        streaming: newState.streaming,
+        date: new Date(),
+    }
+
+    if (!newUpdate.streaming && newUpdate.channelID === oldUpdate?.channelID && newUpdate.date < new Date(oldUpdate.date.getTime() + voiceTimeout)) {
+        console.log(`${oldState.member.displayName} rejoined ${newState.channel.name} (Discord crash or disconnection?)`)
         return
     }
     if (oldState.channelID && !newState.channelID) {
         console.log(`${oldState.member.displayName} left ${oldState.channel.name}`)
         return
     }
+
+    voiceMemory[`user${newState.member.id}`] = newUpdate
+
+    if (!oldState.channelID && newState.channelID) {
+        console.log(`${newState.member.displayName} joined ${newState.channel.name}`)
+        updateChannel.send(`${messagePrefix()} <@${newState.member.id}> joined the **${newState.channel.name}** voice channel! ${voiceSuffix()}`)
+        return
+    }
     if (oldState.channelID && newState.channelID && oldState.channelID !== newState.channelID) {
         console.log(`${newState.member.displayName} switched to ${newState.channel.name}`)
-        channel.send(`${messagePrefix()} <@${newState.member.id}> switched to the **${newState.channel.name}** voice channel! ${voiceSuffix()}`)
+        updateChannel.send(`${messagePrefix()} <@${newState.member.id}> switched to the **${newState.channel.name}** voice channel! ${voiceSuffix()}`)
         return
     }
     if (oldState.channelID === newState.channelID && !oldState.streaming && newState.streaming) {
         console.log(`${newState.member.displayName} is streaming in ${newState.channel.name}`)
-        channel.send(`${messagePrefix()} <@${newState.member.id}> started streaming in the **${newState.channel.name}** voice channel!`)
+        updateChannel.send(`${messagePrefix()} <@${newState.member.id}> started streaming in the **${newState.channel.name}** voice channel!`)
         return
     }
 
