@@ -1,3 +1,7 @@
 node_modules
+.vscode
 .DS_Store
 .env
+
+# db.json data is specific to the server it runs on
+db.json

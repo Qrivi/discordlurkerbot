@@ -1,18 +1,21 @@
 {
-  "name": "discordbot",
+  "name": "discordlurkerbot",
   "version": "1.0.0",
-  "description": "",
+  "private": true,
+  "description": "Gamer Alert",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
+    "start": "node index.mjs",
+    "dev": "nodemon index.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "discord.js": "^12.4.1",
-    "dotenv": "^8.2.0"
+    "dotenv": "^8.2.0",
+    "lowdb": "^1.0.0",
+    "node-cron": "^2.0.3"
   },
   "devDependencies": {
     "nodemon": "^2.0.4"
