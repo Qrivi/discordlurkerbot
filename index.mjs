@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv'
-import Discord, { Presence } from 'discord.js'
-// import cron from 'node-cron'
+import Discord from 'discord.js'
+// import cron from 'node-cron' -- soon™️
 import lowdb from 'lowdb'
 import { default as FileSync } from 'lowdb/adapters/FileSync.js'
 
