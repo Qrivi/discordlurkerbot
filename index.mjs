@@ -7,7 +7,9 @@ import { default as FileSync } from "lowdb/adapters/FileSync.js"
 // config environment
 dotenv.config()
 const client = new Discord.Client()
-// TODO const db = lowdb(new FileSync('db.json'))
+const db = lowdb(new FileSync('db.json'))
+db.defaults({ streaks: [], events: [] })
+    .write()
 const gameMemory = {}
 const gameTimeout = 120 /* minutes */ * 60000
 const voiceMemory = {}
@@ -15,7 +17,7 @@ const voiceTimeout = 30 /* minutes */ * 60000
 const blacklist = [
     'BattlEye Launcher',
     'BattleEye Launcher',
-    'Visual Studio Code',
+    'xVisual Studio Code',
     'IntelliJ IDEA Ultimate',
 ]
 const roles = [
@@ -82,8 +84,9 @@ if (!updateChannel) {
 
 // Discord listeners
 client.on('message', message => {
-    if (message.channel.id === env.channelID && message.member.id === client.user.id) { // Activity update from this bot
-        const player = message.mentions.users.first()
+    if (message.channel.id === env.channelID && message.member.id === client.user.id) { // Message from this bot
+        const player = message.mentions?.users?.first()
+        if (!player) return // Not an activity update message
 
         message.react('❌')
         message.awaitReactions((reaction, user) => user.id == player.id && reaction.emoji.name == '❌', { max: 1, time: 60000 }).then(collection => {
@@ -120,6 +123,48 @@ client.on('presenceUpdate', (oldPresence, newPresence) => {
     const game = role ? `<@&${role.id}>` : `**${newActivity.game}**`
     console.log('  Playing a new game -- sending update')
     updateChannel.send(`${messagePrefix()} <@${newPresence.member.id}> started playing ${game}! ${gameSuffix()}`)
+
+    // Streak counting logic below -- I should start splitting this into functions tbh
+    const today = new Date()
+    today.setHours(0)
+    today.setMinutes(0)
+    today.setSeconds(0, 0)
+    const streak = db.get('streaks')
+        .find({
+            userID: newPresence.member.id,
+            game: newActivity.game
+        })
+        .value()
+
+    if (!streak) { // User has no streak for this game
+        db.get('streaks')
+            .push({
+                userID: newPresence.member.id,
+                game: newActivity.game,
+                day: today,
+                count: 1,
+            })
+            .write()
+        console.log(`${newActivity.game} streak for ${newPresence.member.displayName} created`)
+        updateChannel.send(`Looks like it's your first time playing. Good luck, gamer!`)
+        return
+    }
+
+    const thisTime = today.getTime()
+    const lastTime = new Date(streak.day).getTime()
+    if (thisTime === lastTime) return // Has already played this game today
+
+    if (thisTime - lastTime === 86400000) { // Last streak update was yesterday
+        streak.count++
+        console.log(`${newActivity.game} streak for ${newPresence.member.displayName} was upped to ${streak.count}`)
+        updateChannel.send(`That's a ${streak.count} day streak!`)
+    } else { // Streak is broken
+        streak.count = 1
+        console.log(`${newActivity.game} streak for ${newPresence.member.displayName} was reset to 1`)
+        updateChannel.send(`Aww. Your streak was broken!`).then(msg => msg.react('🇫'))
+    }
+    streak.day = today
+    db.write()
 })
 
 client.on('voiceStateUpdate', (oldState, newState) => {
