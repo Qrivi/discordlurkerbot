@@ -272,5 +272,5 @@ client.on('presenceUpdate', (oldPresence, newPresence) => {
 })
 
 // Let's go
-client.user.setActivity('server activity', { type: 'LISTENING' })
+client.user.setActivity('server activity!', { type: 'LISTENING' })
 console.log('Ready!')
