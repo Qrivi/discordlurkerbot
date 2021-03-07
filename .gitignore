@@ -4,4 +4,4 @@ node_modules
 .vscode
 
 # db.json data is specific to the server it runs on
-db.json
+/lurkerbot/db.json

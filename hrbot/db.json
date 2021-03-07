@@ -1,0 +1,91 @@
+{
+  "users": [
+    {
+      "id": "524238293211021332",
+      "name": "Michiel Bellekens",
+      "description": "Deze Michiel brouwt code terwijl zijn bier aan het compilen is.",
+      "url": "https://www.linkedin.com/in/michiel-bellekens/",
+      "photo": "https://media-exp1.licdn.com/dms/image/C4D03AQEwtTh5AErRog/profile-displayphoto-shrink_800_800/0/1516941969030?e=1618444800&v=beta&t=1bqMDVXmIuawyP-i8AOr87LmV53WPjrdkZWvP0xYTyA",
+      "strength": "Jack of all trades",
+      "weakness": "Master of none (yet)"
+    },
+    {
+      "id": "157097358235140096",
+      "name": "Dirk Christeaens",
+      "description": "Deze net-niet boomer vertegenwoordigt de oudere generatie esportsathleten.",
+      "url": "https://www.linkedin.com/in/dirkchristeaens/",
+      "photo": "https://media-exp1.licdn.com/dms/image/C5603AQHIHnnNZYSXcw/profile-displayphoto-shrink_800_800/0/1552124623552?e=1618444800&v=beta&t=0HnQMSRbKHN5ZQnl9zt4khr-xKJqL5r9_k1Kb4jH1Zs",
+      "strength": "Geeft zowel IMS- als emotional support",
+      "weakness": "Heeft soms last van zijn rug",
+      "birthday": "0000-08-20"
+    },
+    {
+      "id": "511487864664489994",
+      "name": "Steve De Clercq",
+      "description": "Als Steve gepasseerd is weet je dat er geen enkele bug meer inzit.",
+      "url": "https://www.linkedin.com/in/steve-de-clercq-2b546367/",
+      "photo": "https://media-exp1.licdn.com/dms/image/C5603AQFJM0QdJR9Ztw/profile-displayphoto-shrink_800_800/0/1517355037311?e=1618444800&v=beta&t=GaGBaq7IncDJ_AJq6qQUv0c3e8qb9885NGz2VCOD9UQ",
+      "strength": "Kan je een job aanbieden",
+      "weakness": "Heeft niet graag buitenlanders"
+    },
+    {
+      "id": "360395284775305216",
+      "name": "Jelte De Proft",
+      "description": "Een van Intix' grootste beloftes die bereid is je mee te nemen op zijn pad naar succes.",
+      "url": "https://www.linkedin.com/in/jelte-de-proft-826924153/",
+      "photo": "https://media-exp1.licdn.com/dms/image/C4D03AQHR0jaBzmTqhg/profile-displayphoto-shrink_800_800/0/1538197592380?e=1618444800&v=beta&t=pnwTVeThK9ET-qwclPBp-tH1Z0UZX0BoDrX1LFA1fI4",
+      "strength": "Altijd goed gehumeurd",
+      "weakness": "Maakd veel spelfouten",
+      "birthday": "1992-11-05"
+    },
+    {
+      "id": "209350592319979520",
+      "name": "Kristof Dewilde",
+      "description": "Er is niets dat deze mooi besnorde programmeur niet programmeren kan.",
+      "url": "https://kristofdewil.de",
+      "photo": "https://media-exp1.licdn.com/dms/image/C4E03AQGIZeIh_ENlHQ/profile-displayphoto-shrink_800_800/0/1584409597470?e=1618444800&v=beta&t=cbhYi6_Th_2Q4yXjy1TScqPq_BHU47_gg2EIe93w6sM",
+      "strength": "Roteert heel goed in Rocket League",
+      "weakness": "Praat soms beetje veel en lang",
+      "birthday": "1993-09-26"
+    },
+    {
+      "id": "665293461330853890",
+      "name": "Thomas Franck",
+      "description": "Stille schaduw wakend over de integriteit en gerechtigheid binnen Intix.",
+      "url": "https://www.linkedin.com/in/thomas-franck-7896a5ab/",
+      "photo": "https://i.imgur.com/SZz1WfY.jpg",
+      "strength": "Kan programmeren in het Chinees",
+      "weakness": "Kan alleen kwaad naar monitors kijken"
+    },
+    {
+      "id": "377439696831119360",
+      "name": "Matthias Ghys",
+      "description": "Teamplayer met een skillset als een Swiss Army knife.",
+      "url": "https://www.linkedin.com/in/matthias-ghys-283381159/",
+      "photo": "https://media-exp1.licdn.com/dms/image/C5603AQFQAIE0GhIBsw/profile-displayphoto-shrink_800_800/0/1539253845297?e=1618444800&v=beta&t=kEcnDgsB7FRbrshreySRfOcpi_ZlU5FuKzppTmLvYOk",
+      "strength": "Kan je boosten naar Java Grand Champ",
+      "weakness": "Zegt parking tegen alles buiten Antwerpen",
+      "birthday": "1994-12-20"
+    },
+    {
+      "id": "190099535605923840",
+      "name": "Kevin Keersmaekers",
+      "description": "Kevin kan het programmeren voor je, zelfs als hij in frut is.",
+      "url": "https://www.linkedin.com/in/kevin-keersmaekers-7353a666/",
+      "photo": "https://media-exp1.licdn.com/dms/image/C5603AQH1U8-fDBRnJA/profile-displayphoto-shrink_800_800/0/1517274410436?e=1618444800&v=beta&t=AjZKrSGFmCxJACN8A7qwTNMsMxzqFpGIpev38QKxUWg",
+      "strength": "Bezit elke game uit de Steam shop",
+      "weakness": "Wilt Jolien niet delen",
+      "birthday": "1991-02-14"
+    },
+    {
+      "id": "189786408414740480",
+      "name": "Michael Newbould",
+      "description": "Intix Certified Teddybeer met veel ideeën en nog meer IQ.",
+      "url": "https://www.linkedin.com/in/michael-newbould-849256b3/",
+      "photo": "https://cdn.discordapp.com/attachments/689197476850434102/689915068414296114/Image_Pasted_at_2020-3-3_15-18.png",
+      "strength": "Kan typen op rare toetsenborden",
+      "weakness": "Is soms een beetje verlegen",
+      "birthday": "1994-10-28"
+    }
+  ]
+}
