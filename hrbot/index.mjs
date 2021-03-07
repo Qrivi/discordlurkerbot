@@ -2,25 +2,28 @@ import * as dotenv from 'dotenv'
 import Discord from 'discord.js'
 import cron from 'node-cron'
 import lowdb from 'lowdb'
-import { default as FileSync } from "lowdb/adapters/FileSync.js"
+import { default as FileSync } from 'lowdb/adapters/FileSync.js'
+import { join as joinPath, dirname } from 'path'
+import { fileURLToPath } from 'url'
 
 // config environment
 dotenv.config()
 const client = new Discord.Client()
-const db = lowdb(new FileSync('db.json'))
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const db = lowdb(new FileSync(joinPath(__dirname, 'db.json')))
 db.defaults({ users: [] }).write()
 
 // connect beep beep boop
 const env = process.env.DISCORD_ENV.trim().toUpperCase() === 'PRD'
     ? {
-        token: process.env.DISCORD_TOKEN.trim(),
-        cron: process.env.DISCORD_SCHEDULE.trim(),
-        lobby: process.env.DISCORD_CHANNEL_PRD.trim(),
+        token: process.env.DISCORD_HR_TOKEN.trim(),
+        cron: process.env.DISCORD_HR_SCHEDULE.trim(),
+        lobby: process.env.DISCORD_HR_CHANNEL_PRD.trim(),
     }
     : {
-        token: process.env.DISCORD_TOKEN.trim(),
-        cron: process.env.DISCORD_SCHEDULE.trim(),
-        lobby: process.env.DISCORD_CHANNEL_DEV.trim(),
+        token: process.env.DISCORD_HR_TOKEN.trim(),
+        cron: process.env.DISCORD_HR_SCHEDULE.trim(),
+        lobby: process.env.DISCORD_HR_CHANNEL_DEV.trim(),
     }
 await client.login(env.token)
 
@@ -228,7 +231,7 @@ const checkBirthdays = () => {
 
 // Discord listeners
 client.on('message', async message => {
-    if (message.author.bot || message.content.includes("@here") || message.content.includes("@everyone"))
+    if (message.author.bot || message.content.includes('@here') || message.content.includes('@everyone'))
         return false
 
     if (message.channel.id === activeChannel?.id)

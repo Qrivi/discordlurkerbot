@@ -1,0 +1,29 @@
+{
+  "name": "intixbots",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bots for Intix' Discord server",
+  "scripts": {
+    "start": "echo \"You'll need to specify which bot to start\"",
+    "start:hrbot": "node hrbot/index.mjs",
+    "start:lurkerbot": "node lurkerbot/index.mjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": {
+    "name": "Kristof Dewilde",
+    "email": "code@qrivi.dev",
+    "url": "https://kristofdewil.de"
+  },
+  "homepage": "https://github.com/Qrivi/intixbots",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^12.4.1",
+    "dotenv": "^8.2.0",
+    "lowdb": "^1.0.0",
+    "node-cron": "^2.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.31",
+    "nodemon": "^2.0.4"
+  }
+}

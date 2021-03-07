@@ -3,11 +3,14 @@ import Discord from 'discord.js'
 // import cron from 'node-cron' -- soon™️
 import lowdb from 'lowdb'
 import { default as FileSync } from 'lowdb/adapters/FileSync.js'
+import { join as joinPath, dirname } from 'path'
+import { fileURLToPath } from 'url'
 
 // config environment
 dotenv.config()
 const client = new Discord.Client()
-const db = lowdb(new FileSync('db.json'))
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const db = lowdb(new FileSync(joinPath(__dirname, 'db.json')))
 db.defaults({ streaks: [], events: [] })
     .write()
 const gameMemory = {}
@@ -62,12 +65,12 @@ const voiceSuffix = () => voiceSuffixes[Math.floor(Math.random() * voiceSuffixes
 // connect beep beep boop
 const env = process.env.DISCORD_ENV.trim().toUpperCase() === 'PRD'
     ? {
-        token: process.env.DISCORD_TOKEN.trim(),
-        channelID: process.env.DISCORD_CHANNEL_PRD.trim(),
+        token: process.env.DISCORD_LURKER_TOKEN.trim(),
+        channelID: process.env.DISCORD_LURKER_CHANNEL_PRD.trim(),
     }
     : {
-        token: process.env.DISCORD_TOKEN.trim(),
-        channelID: process.env.DISCORD_CHANNEL_DEV.trim(),
+        token: process.env.DISCORD_LURKER_TOKEN.trim(),
+        channelID: process.env.DISCORD_LURKER_CHANNEL_DEV.trim(),
     }
 await client.login(env.token)
 
