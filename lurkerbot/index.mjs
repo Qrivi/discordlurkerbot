@@ -197,11 +197,13 @@ const getStreak = activity => {
     }
 
     if (thisTime - lastTime !== 86400000) { // Last streak update was not yesterday
+        const lastCount = streak.count
         streak.day = today
         streak.count = 1
         db.write()
 
         console.log(`Streak for ${activity.game} was reset to 1`)
+        if (lastCount === 1) return // no need for a message if "streak" was 1, which isn't really a streak
         return {
             count: 0, // special case: 0 if streak was lost, 1 if playing for first time
             message: `Aww. Your streak was broken!`,
