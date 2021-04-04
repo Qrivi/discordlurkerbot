@@ -97,27 +97,27 @@ const getVoiceUpdate = (oldState, newState) => {
     }
 
     if (!newUpdate.streaming && newUpdate.channelID === oldUpdate?.channelID && newUpdate.date < new Date(oldUpdate.date.getTime() + voiceTimeout)) {
-        console.log(`${oldState.member.displayName} rejoined ${newState.channel.name} (Discord crash or disconnection?)`)
+        console.log(`${oldState.member.displayName} rejoined ${newState.channel?.name} (mute/deafen change or reconnected)`)
         return
     }
     if (oldState.channelID && !newState.channelID) {
-        console.log(`${oldState.member.displayName} left ${oldState.channel.name}`)
+        console.log(`${oldState.member.displayName} left ${oldState.channel?.name}`)
         return
     }
 
     voiceMemory[`user${newState.member.id}`] = newUpdate
 
     if (!oldState.channelID && newState.channelID) {
-        console.log(`${newState.member.displayName} joined ${newState.channel.name}`)
-        return `${messagePrefix()} <@${newState.member.id}> joined the **${newState.channel.name}** voice channel! ${voiceSuffix()}`
+        console.log(`${newState.member.displayName} joined ${newState.channel?.name}`)
+        return `${messagePrefix()} <@${newState.member.id}> joined the **${newState.channel?.name}** voice channel! ${voiceSuffix()}`
     }
     if (oldState.channelID && newState.channelID && oldState.channelID !== newState.channelID) {
-        console.log(`${newState.member.displayName} switched to ${newState.channel.name}`)
-        return `${messagePrefix()} <@${newState.member.id}> switched to the **${newState.channel.name}** voice channel! ${voiceSuffix()}`
+        console.log(`${newState.member.displayName} switched to ${newState.channel?.name}`)
+        return `${messagePrefix()} <@${newState.member.id}> switched to the **${newState.channel?.name}** voice channel! ${voiceSuffix()}`
     }
     if (oldState.channelID === newState.channelID && !oldState.streaming && newState.streaming) {
-        console.log(`${newState.member.displayName} is streaming in ${newState.channel.name}`)
-        return `${messagePrefix()} <@${newState.member.id}> started streaming in the **${newState.channel.name}** voice channel!`
+        console.log(`${newState.member.displayName} is streaming in ${newState.channel?.name}`)
+        return `${messagePrefix()} <@${newState.member.id}> started streaming in the **${newState.channel?.name}** voice channel!`
     }
 
     console.warn('⚠️ Received unknown voiceStateUpdate')
