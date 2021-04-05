@@ -284,10 +284,21 @@ const createEmbed = async (event, accepted, declined, tentative) => {
 // Function to parse message parts into event date
 const parseToEvent = messageParts => {
     return {
-        eventID: Date.now(),
+        eventID: Date.now().toString(),
         name: messageParts.find(part => /^name:.+/i.test(part))?.substring(5).trim(),
         description: messageParts.find(part => /^description:.+/i.test(part))?.substring(12).trim(),
         date: new Date(messageParts.find(part => /^date:.+/i.test(part))?.substring(5).trim()),
+    }
+}
+
+// Function to list all the events that are currently in the database
+const listEvents = () => {
+    const events = db.get('events').value()
+
+    if (events?.length) {
+        adminChannel.send('These are the `id`s of events that exist in the database right now:' + events.map(event => `\n- \`${event.eventID}\` (${event.name}, ${event.date})`))
+    } else {
+        adminChannel.send('There are no events in the database right now.')
     }
 }
 
@@ -318,17 +329,21 @@ const createEvent = async (messageParts, organizer) => {
     adminChannel.send(`Mention me and let me know whether you want to:\n- \`update event ${eventData.eventID}\`\n- \`delete event ${eventData.eventID}\`\n- \`publish event ${eventData.eventID}\``)
 }
 
-// Function to update a new event based on the message that was passed through
+// Function to update an event based on the message that was passed through
 const updateEvent = async (messageParts, organizer) => {
     const eventData = parseToEvent(messageParts)
     const eventID = messageParts[0].match(/^.*update event (\d+).*$/i)?.[1]
-    const event = db.get('events').find({ eventID: parseInt(eventID) }).value()
+    const event = db.get('events').find({ eventID }).value()
 
-    if (!event ) {
+    if (!event) {
         adminChannel.send(`That won't work: there is no event with ID \`${eventID}\`.`)
         return
     }
 
+    if (messageParts.length === 1) {
+        adminChannel.send(`That won't work: you did not list any modifications to perform.`)
+        return
+    }
     if (eventData.name?.length) {
         event.name = eventData.name
         event.organizerID = organizer.id
@@ -349,9 +364,73 @@ const updateEvent = async (messageParts, organizer) => {
     adminChannel.send(`Mention me and let me know whether you want to:\n- \`update event ${event.eventID}\`\n- \`delete event ${event.eventID}\`\n- \`publish event ${event.eventID}\``)
 }
 
+// Function to delete an event from the database
+const deleteEvent = async messageParts => {
+    const eventID = messageParts[0].match(/^.*delete event (\d+).*$/i)?.[1]
+    const events = db.get('events').remove({ eventID }).write()
+
+    if (events.length !== 1) {
+        adminChannel.send(`That won't work: there is no event with ID \`${eventID}\`.`)
+        return
+    }
+
+    adminChannel.send(`Poof! That event (${events[0].name}, ${events[0].date}) is now gone forever.`)
+}
+
+// Function to preview an event embed
+const previewEvent = async messageParts => {
+    const eventID = messageParts[0].match(/^.*preview event (\d+).*$/i)?.[1]
+    const event = db.get('events').find({ eventID }).value()
+
+    if (!event) {
+        adminChannel.send(`That won't work: there is no event with ID \`${eventID}\`.`)
+        return
+    }
+
+    event.date = new Date(event.date)
+
+    await adminChannel.send('That event currently looks as follows:', await createEmbed(event))
+    adminChannel.send(`Mention me and let me know whether you want to:\n- \`update event ${event.eventID}\`\n- \`delete event ${event.eventID}\`\n- \`publish event ${event.eventID}\``)
+}
+
 // Sends an informative message on how to use the bot
-const sendHelp = () => {
-    adminChannel.send('Now I would explain how I work')
+const sendHelp = async () => {
+    await adminChannel.send(
+        'I have recently gained functionality to help admins schedule and organize events! 🥳\n' +
+        'You can mention me in the admin channel and use the following commands: '
+    )
+    await adminChannel.send(
+        '`list events`\n' +
+        '> This will list the `id`s of all the events that currently exist in the database.',
+    )
+    await adminChannel.send(
+        '`new event`\n' +
+        '> This will add a new event to the database. You will need to include a `name` and a `date`, and optionally a `description`, as arguments.',
+    )
+    await adminChannel.send(
+        '`update event [id]`\n' +
+        '> This will update an existing event with matching `id` with the new data passed as arguments.',
+    )
+    await adminChannel.send(
+        '`delete event [id]`\n' +
+        '> This will remove the event with matching `id` from the database.',
+    )
+    await adminChannel.send(
+        '`preview event [id]`\n' +
+        '> This will show a preview of the event with matching `id` in the admin channel.',
+    )
+    await adminChannel.send(
+        '`publish event [id]`\n' +
+        '> This will publish the event with matching `id` to the update channel so gamers can RSVP.',
+    )
+    await adminChannel.send(
+        '\u200B\nAs you can see, `new event` and `update event` require you to pass event data as arguments. Data is passed by adding a new line under your command in the same message (Shift + Enter, or copy and paste from the notes app if you\'re on your phone I suppose). The argument\'s key will be parsed from the start of the line till the first colon, and everything after that colon till the end of the line will be considered the argument\'s value.\n' +
+        'Keys are case insensitive and values are trimmed. You can\'t add a backtick or dash or even space as the first character of an argument as the key won\'t match.\n'
+    )
+    await adminChannel.send(
+        '\u200B\nYou can use this example to try me out(don\'t forget to `delete event` after to keep the database clean):\n' +
+        '```\n@Gamer Alert new event\nname: JackBox Party\ndate: 31 Dec 2021 19:30:00 GMT+2\ndescription: Kom jij ook spelletjes spelen met je collega\'s?```'
+    )
 }
 
 // Sends a message that the bot did not understand what it is supposed to do
@@ -378,11 +457,20 @@ client.on('message', message => {
         if (/^.*help.*$/i.test(messageParts[0])) {
             return sendHelp()
         }
+        if (/^.*list events.*$/i.test(messageParts[0])) {
+            return listEvents()
+        }
         if (/^.*new event.*$/i.test(messageParts[0])) {
             return createEvent(messageParts, message.author)
         }
         if (/^.*update event \d+.*$/i.test(messageParts[0])) {
             return updateEvent(messageParts, message.author)
+        }
+        if (/^.*delete event \d+.*$/i.test(messageParts[0])) {
+            return deleteEvent(messageParts)
+        }
+        if (/^.*preview event \d+.*$/i.test(messageParts[0])) {
+            return previewEvent(messageParts)
         }
         return sendDoNotUnderstand()
     }
