@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url'
 
 // config environment
 dotenv.config()
-const client = new Discord.Client()
+const client = new Discord.Client({ partials: ['MESSAGE', 'CHANNEL', 'REACTION'] })
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const db = lowdb(new FileSync(joinPath(__dirname, 'db.json')))
 db.defaults({ streaks: [], events: [] })
@@ -66,11 +66,15 @@ const voiceSuffix = () => voiceSuffixes[Math.floor(Math.random() * voiceSuffixes
 const env = process.env.DISCORD_ENV.trim().toUpperCase() === 'PRD'
     ? {
         token: process.env.DISCORD_LURKER_TOKEN.trim(),
-        channelID: process.env.DISCORD_LURKER_CHANNEL_PRD.trim(),
+        timeZone: process.env.DISCORD_TIMEZONE.trim(),
+        updateChannelID: process.env.DISCORD_LURKER_CHANNEL_PRD.trim(),
+        adminChannelID: process.env.DISCORD_ADMIN_CHANNEL_PRD.trim(),
     }
     : {
         token: process.env.DISCORD_LURKER_TOKEN.trim(),
-        channelID: process.env.DISCORD_LURKER_CHANNEL_DEV.trim(),
+        timeZone: process.env.DISCORD_TIMEZONE.trim(),
+        updateChannelID: process.env.DISCORD_LURKER_CHANNEL_DEV.trim(),
+        adminChannelID: process.env.DISCORD_ADMIN_CHANNEL_DEV.trim(),
     }
 await client.login(env.token)
 
@@ -79,9 +83,14 @@ if (!intix) {
     console.error('Bot is not active in the Intix Discord server')
     process.exit(1)
 }
-const updateChannel = await intix.channels.cache.find(channel => channel.id === env.channelID)?.fetch()
+const updateChannel = await intix.channels.cache.find(channel => channel.id === env.updateChannelID)?.fetch()
 if (!updateChannel) {
     console.error('The update channel defined in the environment does not exist')
+    process.exit(1)
+}
+const adminChannel = await intix.channels.cache.find(channel => channel.id === env.adminChannelID)?.fetch()
+if (!adminChannel) {
+    console.error('The admin channel defined in the environment does not exist')
     process.exit(1)
 }
 
@@ -247,9 +256,112 @@ const reactToStreakCount = (message, count) => {
     }
 }
 
+// Function to get text version of a user's gamertag
+const getUserName = async (userID, prefix) => {
+    const user = await intix.members.fetch(userID)
+    return prefix ? prefix + user.displayName : user.displayName
+}
+
+// Function to create beautiful embeds with event info
+const createEmbed = async (event, accepted, declined, tentative) => {
+    const spacer = ' \u200B \u200B \u200B'
+    const dateAsString = `${event.date?.toLocaleString('en-GB', { dateStyle: 'full', timeStyle: 'short', timeZone: env.timeZone })} ${env.timeZone}`
+
+    const acceptedList = (accepted?.length ? Promise.all(accepted.map(userID => getUserName(userID, '> • '))).join('\n') : '> No one yet') + '\n\u200B'
+    const declinedList = (declined?.length ? Promise.all(declined.map(userID => getUserName(userID, '> • '))).join('\n') : '> No one yet') + '\n\u200B'
+    const tentativeList = (tentative?.length ? Promise.all(tentative.map(userID => getUserName(userID, '> • '))).join('\n') : '> No one yet') + '\n\u200B'
+
+    return new Discord.MessageEmbed()
+        .setColor('#ff0000')
+        .setTitle(event.name)
+        .setDescription(event.description ? `**${dateAsString}**\n\n${event.description}\n\u200B` : `**${dateAsString}**\n\u200B`)
+        .addField(`:green_circle: Accepted (${accepted?.length ?? 0})${spacer}`, acceptedList, true)
+        .addField(`:red_circle: Declined (${declined?.length ?? 0})${spacer}`, declinedList, true)
+        .addField(`:yellow_circle: Tentative (${tentative?.length ?? 0})${spacer}`, tentativeList, true)
+        .setFooter('RSVP by reacting below')
+}
+
+// Function to parse message parts into event date
+const parseToEvent = messageParts => {
+    return {
+        eventID: Date.now(),
+        name: messageParts.find(part => /^name:.+/i.test(part))?.substring(5).trim(),
+        description: messageParts.find(part => /^description:.+/i.test(part))?.substring(12).trim(),
+        date: new Date(messageParts.find(part => /^date:.+/i.test(part))?.substring(5).trim()),
+    }
+}
+
+// Function to create a new event based on the message that was passed through
+const createEvent = async (messageParts, organizer) => {
+    const eventData = parseToEvent(messageParts)
+
+    if (!eventData.name || !eventData.name.length) {
+        adminChannel.send(`That won't work: your event needs a name.`)
+        return
+    }
+    if (!eventData.date || isNaN(eventData.date.getTime()) || eventData.date.getTime() < new Date().getTime()) {
+        adminChannel.send(`That won't work: your event needs a valid date in the future.`)
+        adminChannel.send(`> In order to avoid parsing issues, use the ISO 8601 Extended Format, e.g. \`26 Sep 2021 15:00:00 GMT+2\`.`)
+        return
+    }
+
+    if (db.get('events').find({ eventID: eventData.eventID }).value()) {
+        adminChannel.send(`That won't work: an event is already scheduled at that time (see \`preview event ${eventData.eventID}\`).`)
+        return
+    }
+
+    db.get('events')
+        .push({ ...eventData, organizerID: organizer.id })
+        .write()
+
+    await adminChannel.send('The following event was created:', await createEmbed(eventData))
+    adminChannel.send(`Mention me and let me know whether you want to:\n- \`update event ${eventData.eventID}\`\n- \`delete event ${eventData.eventID}\`\n- \`publish event ${eventData.eventID}\``)
+}
+
+// Function to update a new event based on the message that was passed through
+const updateEvent = async (messageParts, organizer) => {
+    const eventData = parseToEvent(messageParts)
+    const eventID = messageParts[0].match(/^.*update event (\d+).*$/i)?.[1]
+    const event = db.get('events').find({ eventID: parseInt(eventID) }).value()
+
+    if (!event ) {
+        adminChannel.send(`That won't work: there is no event with ID \`${eventID}\`.`)
+        return
+    }
+
+    if (eventData.name?.length) {
+        event.name = eventData.name
+        event.organizerID = organizer.id
+    }
+    if (eventData.description?.length) {
+        event.description = eventData.description
+        event.organizerID = organizer.id
+    }
+    if (eventData.date && !isNaN(eventData.date.getTime()) && eventData.date.getTime() > new Date().getTime()) {
+        event.date = eventData.date
+        event.organizerID = organizer.id
+    }
+
+    db.write()
+    event.date = new Date(event.date)
+
+    await adminChannel.send('The event was updated as follows:', await createEmbed(event))
+    adminChannel.send(`Mention me and let me know whether you want to:\n- \`update event ${event.eventID}\`\n- \`delete event ${event.eventID}\`\n- \`publish event ${event.eventID}\``)
+}
+
+// Sends an informative message on how to use the bot
+const sendHelp = () => {
+    adminChannel.send('Now I would explain how I work')
+}
+
+// Sends a message that the bot did not understand what it is supposed to do
+const sendDoNotUnderstand = () => {
+    adminChannel.send('I did not understand that.\nIf you want to know what I can do, mention me and say "help".')
+}
+
 // Discord listeners
 client.on('message', message => {
-    if (message.channel.id === env.channelID && message.member.id === client.user.id) { // Message from this bot
+    if (message.channel.id === env.updateChannelID && message.member.id === client.user.id) { // Update message from this bot
         const player = message.mentions?.users?.first()
         if (!player) return // Not an activity update message
 
@@ -258,6 +370,21 @@ client.on('message', message => {
             if (collection.first()) message.delete() // Triggered because of reaction
             else message.reactions.cache.get('❌').remove() // Triggered because of timeout
         })
+        return
+    }
+    if (message.channel.id === env.adminChannelID && message.mentions.has(client.user.id)) { // Message from an admin to this bot
+        const messageParts = message.content.split('\n')
+
+        if (/^.*help.*$/i.test(messageParts[0])) {
+            return sendHelp()
+        }
+        if (/^.*new event.*$/i.test(messageParts[0])) {
+            return createEvent(messageParts, message.author)
+        }
+        if (/^.*update event \d+.*$/i.test(messageParts[0])) {
+            return updateEvent(messageParts, message.author)
+        }
+        return sendDoNotUnderstand()
     }
 })
 
