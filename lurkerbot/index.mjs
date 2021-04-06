@@ -256,29 +256,23 @@ const reactToStreakCount = (message, count) => {
     }
 }
 
-// Function to get text version of a user's gamertag
-const getUserName = async (userID, prefix) => {
-    const user = await intix.members.fetch(userID)
-    return prefix ? prefix + user.displayName : user.displayName
-}
-
 // Function to create beautiful embeds with event info
-const createEmbed = async (event, accepted, declined, tentative) => {
+const createEmbed = async event => {
     const spacer = ' \u200B \u200B \u200B'
     const dateAsString = `${event.date?.toLocaleString('en-GB', { dateStyle: 'full', timeStyle: 'short', timeZone: env.timeZone })} ${env.timeZone}`
 
-    const acceptedList = (accepted?.length ? Promise.all(accepted.map(userID => getUserName(userID, '> • '))).join('\n') : '> No one yet') + '\n\u200B'
-    const declinedList = (declined?.length ? Promise.all(declined.map(userID => getUserName(userID, '> • '))).join('\n') : '> No one yet') + '\n\u200B'
-    const tentativeList = (tentative?.length ? Promise.all(tentative.map(userID => getUserName(userID, '> • '))).join('\n') : '> No one yet') + '\n\u200B'
+    const acceptedList = (event.accepted?.length ? event.accepted.map(userID => `> <@${userID}>`).join('\n') : '> No one yet') + '\n\u200B'
+    const declinedList = (event.declined?.length ? event.declined.map(userID => `> <@${userID}>`).join('\n') : '> No one yet') + '\n\u200B'
+    const tentativeList = (event.tentative?.length ? event.tentative.map(userID => `> <@${userID}>`).join('\n') : '> No one yet') + '\n\u200B'
 
     return new Discord.MessageEmbed()
         .setColor('#ff0000')
         .setTitle(event.name)
         .setDescription(event.description ? `**${dateAsString}**\n\n${event.description}\n\u200B` : `**${dateAsString}**\n\u200B`)
-        .addField(`:green_circle: Accepted (${accepted?.length ?? 0})${spacer}`, acceptedList, true)
-        .addField(`:red_circle: Declined (${declined?.length ?? 0})${spacer}`, declinedList, true)
-        .addField(`:yellow_circle: Tentative (${tentative?.length ?? 0})${spacer}`, tentativeList, true)
-        .setFooter('RSVP by reacting below')
+        .addField(`:green_circle: Accepted (${event.accepted?.length ?? 0})${spacer}`, acceptedList, true)
+        .addField(`:red_circle: Declined (${event.declined?.length ?? 0})${spacer}`, declinedList, true)
+        .addField(`:yellow_circle: Tentative (${event.tentative?.length ?? 0})${spacer}`, tentativeList, true)
+        .setFooter(`RSVP by reacting below — event ID: ${event.eventID}`)
 }
 
 // Function to parse message parts into event date
@@ -322,7 +316,7 @@ const createEvent = async (messageParts, organizer) => {
     }
 
     db.get('events')
-        .push({ ...eventData, organizerID: organizer.id })
+        .push({ organizerID: organizer.id, ...eventData, accepted: [], declined: [], tentative: [] })
         .write()
 
     await adminChannel.send('The following event was created:', await createEmbed(eventData))
@@ -393,6 +387,53 @@ const previewEvent = async messageParts => {
     adminChannel.send(`Mention me and let me know whether you want to:\n- \`update event ${event.eventID}\`\n- \`delete event ${event.eventID}\`\n- \`publish event ${event.eventID}\``)
 }
 
+// Function to publish an event embed
+const publishEvent = async messageParts => {
+    const eventID = messageParts[0].match(/^.*publish event (\d+).*$/i)?.[1]
+    const event = db.get('events').find({ eventID }).value()
+
+    if (!event) {
+        adminChannel.send(`That won't work: there is no event with ID \`${eventID}\`.`)
+        return
+    }
+
+    event.date = new Date(event.date)
+
+    const message = await updateChannel.send(`${messagePrefix()} <@${event.organizerID}> scheduled a new event:`, await createEmbed(event))
+    await message.react('🟢')
+    await message.react('🔴')
+    await message.react('🟡')
+
+    adminChannel.send('Done.')
+}
+
+const refreshMessage = async messageParts => {
+    const messageID = messageParts[0].match(/^.*refresh message (\d+).*$/i)?.[1]
+    const message = await updateChannel.messages.fetch(messageID)
+
+    if (!message) {
+        adminChannel.send(`That won't work: there is no message with ID \`${messageID}\` in the update channel.`)
+        return
+    }
+
+    adminChannel.send(await updateEmbed(message) ? 'Done.' : 'Hmmm... Something went wrong.')
+}
+
+const updateEmbed = async message => {
+    const eventID = message?.embeds?.[0]?.footer?.text?.slice(-13)
+    if (!eventID || message.channel.id !== env.updateChannelID || message.author.id !== client.user.id)
+        return false
+
+    const event = db.get('events').find({ eventID }).value()
+    if (!event)
+        return false
+
+    event.date = new Date(event.date)
+
+    await message.edit(await createEmbed(event))
+    return true
+}
+
 // Sends an informative message on how to use the bot
 const sendHelp = async () => {
     await adminChannel.send(
@@ -401,27 +442,31 @@ const sendHelp = async () => {
     )
     await adminChannel.send(
         '`list events`\n' +
-        '> This will list the `id`s of all the events that currently exist in the database.',
+        '> This will list the `eventid`s of all the events that currently exist in the database.',
     )
     await adminChannel.send(
         '`new event`\n' +
         '> This will add a new event to the database. You will need to include a `name` and a `date`, and optionally a `description`, as arguments.',
     )
     await adminChannel.send(
-        '`update event [id]`\n' +
-        '> This will update an existing event with matching `id` with the new data passed as arguments.',
+        '`update event [eventid]`\n' +
+        '> This will update an existing event with matching `eventid` with the new data passed as arguments.',
     )
     await adminChannel.send(
-        '`delete event [id]`\n' +
-        '> This will remove the event with matching `id` from the database.',
+        '`delete event [eventid]`\n' +
+        '> This will remove the event with matching `eventid` from the database.',
     )
     await adminChannel.send(
-        '`preview event [id]`\n' +
-        '> This will show a preview of the event with matching `id` in the admin channel.',
+        '`preview event [eventid]`\n' +
+        '> This will show a preview of the event with matching `eventid` in the admin channel.',
     )
     await adminChannel.send(
-        '`publish event [id]`\n' +
-        '> This will publish the event with matching `id` to the update channel so gamers can RSVP.',
+        '`publish event [eventid]`\n' +
+        '> This will publish the event with matching `eventid` to the update channel so gamers can RSVP.',
+    )
+    await adminChannel.send(
+        '`refresh message [messageid]`\n' +
+        '> This will update the message embed of the message with matching `messageid` with the latest data from the database. This is useful if you only recently published an event but then changed its details (so you won\'t have to delete the message and publish again).',
     )
     await adminChannel.send(
         '\u200B\nAs you can see, `new event` and `update event` require you to pass event data as arguments. Data is passed by adding a new line under your command in the same message (Shift + Enter, or copy and paste from the notes app if you\'re on your phone I suppose). The argument\'s key will be parsed from the start of the line till the first colon, and everything after that colon till the end of the line will be considered the argument\'s value.\n' +
@@ -438,19 +483,29 @@ const sendDoNotUnderstand = () => {
     adminChannel.send('I did not understand that.\nIf you want to know what I can do, mention me and say "help".')
 }
 
-// Discord listeners
-client.on('message', message => {
-    if (message.channel.id === env.updateChannelID && message.member.id === client.user.id) { // Update message from this bot
-        const player = message.mentions?.users?.first()
-        if (!player) return // Not an activity update message
+// Makes a message removable if the concerned user reacts with a ❌
+const makeRemovable = message => {
+    message.awaitReactions((reaction, user) => user.id == message.mentions?.users?.first().id && reaction.emoji.name == '❌', { max: 1, time: 60000 }).then(collection => {
+        if (collection.first()) message.delete() // Triggered because of reaction
+        else message.reactions.cache.get('❌').remove() // Triggered because of timeout
+    })
+    message.react('❌')
+}
 
-        message.react('❌')
-        message.awaitReactions((reaction, user) => user.id == player.id && reaction.emoji.name == '❌', { max: 1, time: 60000 }).then(collection => {
-            if (collection.first()) message.delete() // Triggered because of reaction
-            else message.reactions.cache.get('❌').remove() // Triggered because of timeout
-        })
-        return
-    }
+// Given an event, puts userID in the right queue
+const rsvp = (event, queue, userID) => {
+    const didAcceptBefore = event.accepted.indexOf(userID)
+    if (didAcceptBefore !== 1) event.accepted.splice(didAcceptBefore, 1)
+    const didDeclineBefore = event.declined.indexOf(userID)
+    if (didDeclineBefore !== 1) event.declined.splice(didDeclineBefore, 1)
+    const didTentativeBefore = event.tentative.indexOf(userID)
+    if (didTentativeBefore !== 1) event.tentative.splice(didTentativeBefore, 1)
+
+    queue.push(userID)
+}
+
+// Discord listeners
+client.on('message', async message => {
     if (message.channel.id === env.adminChannelID && message.mentions.has(client.user.id)) { // Message from an admin to this bot
         const messageParts = message.content.split('\n')
 
@@ -472,22 +527,71 @@ client.on('message', message => {
         if (/^.*preview event \d+.*$/i.test(messageParts[0])) {
             return previewEvent(messageParts)
         }
+        if (/^.*publish event \d+.*$/i.test(messageParts[0])) {
+            return publishEvent(messageParts)
+        }
+        if (/^.*refresh message \d+.*$/i.test(messageParts[0])) {
+            return refreshMessage(messageParts)
+        }
         return sendDoNotUnderstand()
     }
 })
 
-client.on('voiceStateUpdate', (oldState, newState) => {
-    const update = getVoiceUpdate(oldState, newState)
-    if (update) updateChannel.send(`${update}`)
+client.on('messageReactionAdd', (reaction, user) => {
+    if (user.bot || reaction.message.channel.id !== env.updateChannelID) return
+
+    if (reaction.message.embeds?.length) { // Must be a published event update
+        const eventID = reaction.message.embeds[0].footer.text.slice(-13)
+        const event = db.get('events').find({ eventID }).value()
+        console.log(`Received a ${reaction.emoji.name} for event with ID ${eventID}`)
+
+        if (!event) {
+            adminChannel.send(`Heads up! Someone is RSVPing to an event that does not exist in the database (anymore?).\nConsider removing the embed for event \`${eventID}\` in the updates channel.`)
+            return
+        }
+
+        switch (reaction.emoji.name) {
+            case '🟢':
+                console.log(`  ${user.username} RSVPed as accepted`)
+                rsvp(event, event.accepted, user.id)
+                break
+            case '🔴':
+                console.log(`  ${user.username} RSVPed as declined`)
+                rsvp(event, event.declined, user.id)
+                break
+            case '🟡':
+                console.log(`  ${user.username} RSVPed as tentative`)
+                rsvp(event, event.tentative, user.id)
+                break
+            default:
+                return
+        }
+
+        reaction.users.remove(user.id)
+        db.write()
+        updateEmbed(reaction.message)
+    }
 })
 
-client.on('presenceUpdate', (oldPresence, newPresence) => {
+client.on('voiceStateUpdate', async (oldState, newState) => {
+    const update = getVoiceUpdate(oldState, newState)
+    if (update) makeRemovable(await updateChannel.send(`${update}`))
+})
+
+client.on('presenceUpdate', async (oldPresence, newPresence) => {
     const activity = getActivity(newPresence)
     const streak = getStreak(activity)
 
     if (activity) {
-        if (streak) updateChannel.send(`${activity.message}\n${streak.message}`).then(message => { reactToStreakCount(message, streak.count) })
-        else updateChannel.send(`${activity.message}`)
+        if (streak) {
+            const message = await updateChannel.send(`${activity.message}\n${streak.message}`)
+            makeRemovable(message)
+            reactToStreakCount(message, streak.count)
+        }
+        else {
+            const message = await updateChannel.send(`${activity.message}`)
+            makeRemovable(message)
+        }
     }
 })
 
