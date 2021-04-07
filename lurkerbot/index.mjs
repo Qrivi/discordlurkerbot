@@ -438,42 +438,32 @@ const updateEmbed = async message => {
 const sendHelp = async () => {
     await adminChannel.send(
         'I have recently gained functionality to help admins schedule and organize events! 🥳\n' +
-        'You can mention me in the admin channel and use the following commands: '
-    )
-    await adminChannel.send(
+        'You can mention me in the admin channel and use the following commands:\n' +
+        '\u200B\n' +
         '`list events`\n' +
-        '> This will list the `eventid`s of all the events that currently exist in the database.',
-    )
-    await adminChannel.send(
+        '> This will list the `eventid`s of all the events that currently exist in the database.\n' +
         '`new event`\n' +
-        '> This will add a new event to the database. You will need to include a `name` and a `date`, and optionally a `description`, as arguments.',
-    )
-    await adminChannel.send(
+        '> This will add a new event to the database. You will need to include a `name` and a `date`, and optionally a `description`, as arguments.\n' +
         '`update event [eventid]`\n' +
-        '> This will update an existing event with matching `eventid` with the new data passed as arguments.',
-    )
-    await adminChannel.send(
+        '> This will update an existing event with matching `eventid` with the new data passed as arguments.\n' +
         '`delete event [eventid]`\n' +
-        '> This will remove the event with matching `eventid` from the database.',
-    )
-    await adminChannel.send(
+        '> This will remove the event with matching `eventid` from the database.\n' +
         '`preview event [eventid]`\n' +
-        '> This will show a preview of the event with matching `eventid` in the admin channel.',
-    )
-    await adminChannel.send(
+        '> This will show a preview of the event with matching `eventid` in the admin channel.\n' +
         '`publish event [eventid]`\n' +
-        '> This will publish the event with matching `eventid` to the update channel so gamers can RSVP.',
-    )
-    await adminChannel.send(
+        '> This will publish the event with matching `eventid` to the update channel so gamers can RSVP.\n' +
         '`refresh message [messageid]`\n' +
-        '> This will update the message embed of the message with matching `messageid` with the latest data from the database. This is useful if you only recently published an event but then changed its details (so you won\'t have to delete the message and publish again).',
+        '> This will update the message embed of the message with matching `messageid` with the latest data from the database. This is useful if you only recently published an event but then changed its ' +
+        'details (so you don\'t have to delete the message and publish again).\n' +
+        '\u200B\n'
     )
     await adminChannel.send(
-        '\u200B\nAs you can see, `new event` and `update event` require you to pass event data as arguments. Data is passed by adding a new line under your command in the same message (Shift + Enter, or copy and paste from the notes app if you\'re on your phone I suppose). The argument\'s key will be parsed from the start of the line till the first colon, and everything after that colon till the end of the line will be considered the argument\'s value.\n' +
-        'Keys are case insensitive and values are trimmed. You can\'t add a backtick or dash or even space as the first character of an argument as the key won\'t match.\n'
-    )
-    await adminChannel.send(
-        '\u200B\nYou can use this example to try me out(don\'t forget to `delete event` after to keep the database clean):\n' +
+        'ℹ️ As you can see, `new event` and `update event` require you to pass event data as arguments. Data is passed by adding a new line under your command in the same message (Shift+Enter, or copy ' +
+        'and paste from the notes app if you\'re on your phone I suppose). The argument\'s key will be parsed from the start of the line till the first colon, and everything after that colon till the ' +
+        'end of the line will be considered the argument\'s value.\n' +
+        'Keys are case insensitive and values are trimmed. You can\'t add a backtick or dash or even space as the first character of an argument as the key won\'t match.\n' +
+        '\u200B\n' +
+        'You can use this example to try me out (don\'t forget to `delete event` afterwards to keep the database clean):\n' +
         '```\n@Gamer Alert new event\nname: JackBox Party\ndate: 31 Dec 2021 19:30:00 GMT+2\ndescription: Kom jij ook spelletjes spelen met je collega\'s?```'
     )
 }
@@ -495,11 +485,11 @@ const makeRemovable = message => {
 // Given an event, puts userID in the right queue
 const rsvp = (event, queue, userID) => {
     const didAcceptBefore = event.accepted.indexOf(userID)
-    if (didAcceptBefore !== 1) event.accepted.splice(didAcceptBefore, 1)
+    if (didAcceptBefore !== -1) event.accepted.splice(didAcceptBefore, 1)
     const didDeclineBefore = event.declined.indexOf(userID)
-    if (didDeclineBefore !== 1) event.declined.splice(didDeclineBefore, 1)
+    if (didDeclineBefore !== -1) event.declined.splice(didDeclineBefore, 1)
     const didTentativeBefore = event.tentative.indexOf(userID)
-    if (didTentativeBefore !== 1) event.tentative.splice(didTentativeBefore, 1)
+    if (didTentativeBefore !== -1) event.tentative.splice(didTentativeBefore, 1)
 
     queue.push(userID)
 }
