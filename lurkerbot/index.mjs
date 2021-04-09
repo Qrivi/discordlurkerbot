@@ -1,6 +1,6 @@
 import * as dotenv from 'dotenv'
 import Discord from 'discord.js'
-// import cron from 'node-cron' -- soon™️
+import cron from 'node-cron'
 import lowdb from 'lowdb'
 import { default as FileSync } from 'lowdb/adapters/FileSync.js'
 import { join as joinPath, dirname } from 'path'
@@ -63,18 +63,22 @@ const voiceSuffixes = [
 const voiceSuffix = () => voiceSuffixes[Math.floor(Math.random() * voiceSuffixes.length)]
 
 // connect beep beep boop
-const env = process.env.DISCORD_ENV.trim().toUpperCase() === 'PRD'
+const env = process.env.DISCORD_ENV?.trim().toUpperCase() === 'PRD'
     ? {
-        token: process.env.DISCORD_LURKER_TOKEN.trim(),
-        timeZone: process.env.DISCORD_TIMEZONE.trim(),
-        updateChannelID: process.env.DISCORD_LURKER_CHANNEL_PRD.trim(),
-        adminChannelID: process.env.DISCORD_ADMIN_CHANNEL_PRD.trim(),
+        token: process.env.DISCORD_LURKER_TOKEN?.trim(),
+        timeZone: process.env.DISCORD_TIMEZONE?.trim(),
+        morningSchedule: process.env.DISCORD_MORNING_SCHEDULE?.trim(),
+        updateChannelID: process.env.DISCORD_UPDATE_CHANNEL_PRD?.trim(),
+        eventChannelID: process.env.DISCORD_EVENT_CHANNEL_PRD?.trim(),
+        adminChannelID: process.env.DISCORD_ADMIN_CHANNEL_PRD?.trim(),
     }
     : {
-        token: process.env.DISCORD_LURKER_TOKEN.trim(),
-        timeZone: process.env.DISCORD_TIMEZONE.trim(),
-        updateChannelID: process.env.DISCORD_LURKER_CHANNEL_DEV.trim(),
-        adminChannelID: process.env.DISCORD_ADMIN_CHANNEL_DEV.trim(),
+        token: process.env.DISCORD_LURKER_TOKEN?.trim(),
+        timeZone: process.env.DISCORD_TIMEZONE?.trim(),
+        morningSchedule: process.env.DISCORD_MORNING_SCHEDULE?.trim(),
+        updateChannelID: process.env.DISCORD_UPDATE_CHANNEL_DEV?.trim(),
+        eventChannelID: process.env.DISCORD_EVENT_CHANNEL_DEV?.trim(),
+        adminChannelID: process.env.DISCORD_ADMIN_CHANNEL_DEV?.trim(),
     }
 await client.login(env.token)
 
@@ -86,6 +90,11 @@ if (!intix) {
 const updateChannel = await intix.channels.cache.find(channel => channel.id === env.updateChannelID)?.fetch()
 if (!updateChannel) {
     console.error('The update channel defined in the environment does not exist')
+    process.exit(1)
+}
+const eventChannel = await intix.channels.cache.find(channel => channel.id === env.eventChannelID)?.fetch()
+if (!eventChannel) {
+    console.error('The event channel defined in the environment does not exist')
     process.exit(1)
 }
 const adminChannel = await intix.channels.cache.find(channel => channel.id === env.adminChannelID)?.fetch()
@@ -256,6 +265,8 @@ const reactToStreakCount = (message, count) => {
     }
 }
 
+// Function that will check if there are events planned for today and inform the group
+
 // Function to create beautiful embeds with event info
 const createEmbed = async event => {
     const spacer = ' \u200B \u200B \u200B'
@@ -399,7 +410,7 @@ const publishEvent = async messageParts => {
 
     event.date = new Date(event.date)
 
-    const message = await updateChannel.send(`${messagePrefix()} <@${event.organizerID}> scheduled a new event:`, await createEmbed(event))
+    const message = await eventChannel.send(`${messagePrefix()} <@${event.organizerID}> scheduled a new event:`, await createEmbed(event))
     await message.react('🟢')
     await message.react('🔴')
     await message.react('🟡')
@@ -407,9 +418,10 @@ const publishEvent = async messageParts => {
     adminChannel.send('Done.')
 }
 
+// Function that will update the event embed to reflect latest database changes
 const refreshMessage = async messageParts => {
     const messageID = messageParts[0].match(/^.*refresh message (\d+).*$/i)?.[1]
-    const message = await updateChannel.messages.fetch(messageID)
+    const message = await eventChannel.messages.fetch(messageID)
 
     if (!message) {
         adminChannel.send(`That won't work: there is no message with ID \`${messageID}\` in the update channel.`)
@@ -419,9 +431,10 @@ const refreshMessage = async messageParts => {
     adminChannel.send(await updateEmbed(message) ? 'Done.' : 'Hmmm... Something went wrong.')
 }
 
+// Function that will actually look for the message to update, and update its embed
 const updateEmbed = async message => {
     const eventID = message?.embeds?.[0]?.footer?.text?.slice(-13)
-    if (!eventID || message.channel.id !== env.updateChannelID || message.author.id !== client.user.id)
+    if (!eventID || message.channel.id !== env.eventChannelID || message.author.id !== client.user.id)
         return false
 
     const event = db.get('events').find({ eventID }).value()
@@ -492,6 +505,10 @@ const rsvp = (event, queue, userID) => {
     if (didTentativeBefore !== -1) event.tentative.splice(didTentativeBefore, 1)
 
     queue.push(userID)
+}
+
+const checkEvents = () => {
+    // todo
 }
 
 // Discord listeners
@@ -585,6 +602,9 @@ client.on('presenceUpdate', async (oldPresence, newPresence) => {
     }
 })
 
+cron.schedule(env.morningSchedule, () => {
+    checkEvents()
+})
 // Let's go
 client.user.setActivity('server activity!', { type: 'LISTENING' })
 console.log('Ready!')

@@ -14,16 +14,18 @@ const db = lowdb(new FileSync(joinPath(__dirname, 'db.json')))
 db.defaults({ users: [] }).write()
 
 // connect beep beep boop
-const env = process.env.DISCORD_ENV.trim().toUpperCase() === 'PRD'
+const env = process.env.DISCORD_ENV?.trim()?.toUpperCase() === 'PRD'
     ? {
-        token: process.env.DISCORD_HR_TOKEN.trim(),
-        cron: process.env.DISCORD_HR_SCHEDULE.trim(),
-        lobby: process.env.DISCORD_HR_CHANNEL_PRD.trim(),
+        token: process.env.DISCORD_HR_TOKEN?.trim(),
+        cron: process.env.DISCORD_MORNING_SCHEDULE?.trim(),
+        readyMessage: process.env.DISCORD_HR_READYMESSAGE?.trim() === 'true',
+        lobby: process.env.DISCORD_LOBBY_CHANNEL_PRD?.trim(),
     }
     : {
-        token: process.env.DISCORD_HR_TOKEN.trim(),
-        cron: process.env.DISCORD_HR_SCHEDULE.trim(),
-        lobby: process.env.DISCORD_HR_CHANNEL_DEV.trim(),
+        token: process.env.DISCORD_HR_TOKEN?.trim(),
+        cron: process.env.DISCORD_MORNING_SCHEDULE?.trim(),
+        readyMessage: process.env.DISCORD_HR_READYMESSAGE?.trim() === 'true',
+        lobby: process.env.DISCORD_LOBBY_CHANNEL_DEV?.trim(),
     }
 await client.login(env.token)
 
@@ -247,5 +249,5 @@ cron.schedule(env.cron, () => {
 
 // Let's go
 console.log('Ready!')
-lobby.send(readyMessage()).then(msg => msg.react('👍'))
 client.user.setActivity('all mentions!', { type: 'LISTENING' })
+if (env.readyMessage) lobby.send(readyMessage()).then(msg => msg.react('👍'))
