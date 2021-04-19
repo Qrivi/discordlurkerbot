@@ -545,7 +545,7 @@ client.on('message', async message => {
 })
 
 client.on('messageReactionAdd', (reaction, user) => {
-    if (user.bot || reaction.message.channel.id !== env.updateChannelID) return
+    if (user.bot || reaction.message.channel.id !== env.eventChannelID) return
 
     if (reaction.message.embeds?.length) { // Must be a published event update
         const eventID = reaction.message.embeds[0].footer.text.slice(-13)
